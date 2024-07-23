@@ -4,99 +4,90 @@ import random
 import pygame
 
 class Game:
-	def __init__(self):
-		self.grid = Grid()
-		self.blocks = [IBlock(), JBlock(), LBlock(), OBlock(), SBlock(), TBlock(), ZBlock()]
-		self.current_block = self.get_random_block()
-		self.next_block = self.get_random_block()
-		self.game_over = False
-		self.score = 0
-		self.rotate_sound = pygame.mixer.Sound("Sounds/rotate.ogg")
-		self.clear_sound = pygame.mixer.Sound("Sounds/clear.ogg")
+    def __init__(self):
+        self.grid = Grid()
+        self.blocks = self.initialize_blocks()
+        self.current_block = self.get_random_block()
+        self.next_block = self.get_random_block()
+        self.game_over = False
+        self.score = 0
+        self.initialize_sounds()
 
-		pygame.mixer.music.load("Sounds/music.ogg")
-		pygame.mixer.music.play(-1)
+    def initialize_blocks(self):
+        return [IBlock(), JBlock(), LBlock(), OBlock(), SBlock(), TBlock(), ZBlock()]
 
-	def update_score(self, lines_cleared, move_down_points):
-		if lines_cleared == 1:
-			self.score += 100
-		elif lines_cleared == 2:
-			self.score += 300
-		elif lines_cleared == 3:
-			self.score += 500
-		self.score += move_down_points
+    def initialize_sounds(self):
+        self.rotate_sound = pygame.mixer.Sound("Sounds/rotate.ogg")
+        self.clear_sound = pygame.mixer.Sound("Sounds/clear.ogg")
+        pygame.mixer.music.load("Sounds/music.ogg")
+        pygame.mixer.music.play(-1)
 
-	def get_random_block(self):
-		if len(self.blocks) == 0:
-			self.blocks = [IBlock(), JBlock(), LBlock(), OBlock(), SBlock(), TBlock(), ZBlock()]
-		block = random.choice(self.blocks)
-		self.blocks.remove(block)
-		return block
+    def update_score(self, lines_cleared, move_down_points):
+        scores = {1: 100, 2: 300, 3: 500}
+        self.score += scores.get(lines_cleared, 0) + move_down_points
 
-	def move_left(self):
-		self.current_block.move(0, -1)
-		if self.block_inside() == False or self.block_fits() == False:
-			self.current_block.move(0, 1)
+    def get_random_block(self):
+        if not self.blocks:
+            self.blocks = self.initialize_blocks()
+        block = random.choice(self.blocks)
+        self.blocks.remove(block)
+        return block
 
-	def move_right(self):
-		self.current_block.move(0, 1)
-		if self.block_inside() == False or self.block_fits() == False:
-			self.current_block.move(0, -1)
+    def move_left(self):
+        self.move_block(0, -1, 0, 1)
 
-	def move_down(self):
-		self.current_block.move(1, 0)
-		if self.block_inside() == False or self.block_fits() == False:
-			self.current_block.move(-1, 0)
-			self.lock_block()
+    def move_right(self):
+        self.move_block(0, 1, 0, -1)
 
-	def lock_block(self):
-		tiles = self.current_block.get_cell_positions()
-		for position in tiles:
-			self.grid.grid[position.row][position.column] = self.current_block.id
-		self.current_block = self.next_block
-		self.next_block = self.get_random_block()
-		rows_cleared = self.grid.clear_full_rows()
-		if rows_cleared > 0:
-			self.clear_sound.play()
-			self.update_score(rows_cleared, 0)
-		if self.block_fits() == False:
-			self.game_over = True
+    def move_down(self):
+        if not self.move_block(1, 0, -1, 0):
+            self.lock_block()
 
-	def reset(self):
-		self.grid.reset()
-		self.blocks = [IBlock(), JBlock(), LBlock(), OBlock(), SBlock(), TBlock(), ZBlock()]
-		self.current_block = self.get_random_block()
-		self.next_block = self.get_random_block()
-		self.score = 0
+    def move_block(self, dx, dy, undo_dx, undo_dy):
+        self.current_block.move(dx, dy)
+        if not self.block_inside() or not self.block_fits():
+            self.current_block.move(undo_dx, undo_dy)
+            return False
+        return True
 
-	def block_fits(self):
-		tiles = self.current_block.get_cell_positions()
-		for tile in tiles:
-			if self.grid.is_empty(tile.row, tile.column) == False:
-				return False
-		return True
+    def lock_block(self):
+        for position in self.current_block.get_cell_positions():
+            self.grid.grid[position.row][position.column] = self.current_block.id
+        self.current_block = self.next_block
+        self.next_block = self.get_random_block()
+        rows_cleared = self.grid.clear_full_rows()
+        if rows_cleared > 0:
+            self.clear_sound.play()
+            self.update_score(rows_cleared, 0)
+        if not self.block_fits():
+            self.game_over = True
 
-	def rotate(self):
-		self.current_block.rotate()
-		if self.block_inside() == False or self.block_fits() == False:
-			self.current_block.undo_rotation()
-		else:
-			self.rotate_sound.play()
+    def reset(self):
+        self.grid.reset()
+        self.blocks = self.initialize_blocks()
+        self.current_block = self.get_random_block()
+        self.next_block = self.get_random_block()
+        self.score = 0
 
-	def block_inside(self):
-		tiles = self.current_block.get_cell_positions()
-		for tile in tiles:
-			if self.grid.is_inside(tile.row, tile.column) == False:
-				return False
-		return True
+    def block_fits(self):
+        return all(self.grid.is_empty(tile.row, tile.column) for tile in self.current_block.get_cell_positions())
 
-	def draw(self, screen):
-		self.grid.draw(screen)
-		self.current_block.draw(screen, 11, 11)
+    def rotate(self):
+        self.current_block.rotate()
+        if not self.block_inside() or not self.block_fits():
+            self.current_block.undo_rotation()
+        else:
+            self.rotate_sound.play()
 
-		if self.next_block.id == 3:
-			self.next_block.draw(screen, 255, 290)
-		elif self.next_block.id == 4:
-			self.next_block.draw(screen, 255, 280)
-		else:
-			self.next_block.draw(screen, 270, 270)
+    def block_inside(self):
+        return all(self.grid.is_inside(tile.row, tile.column) for tile in self.current_block.get_cell_positions())
+
+    def draw(self, screen):
+        self.grid.draw(screen)
+        self.current_block.draw(screen, 11, 11)
+        self.draw_next_block(screen)
+
+    def draw_next_block(self, screen):
+        positions = {3: (255, 290), 4: (255, 280)}
+        x, y = positions.get(self.next_block.id, (270, 270))
+        self.next_block.draw(screen, x, y)
