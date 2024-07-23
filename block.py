@@ -1,79 +1,41 @@
-from block import Block
+from colors import Colors
 from position import Position
+import pygame
 
-class LBlock(Block):
-    def __init__(self):
-        super().__init__(Position(0, 3), id=0)
-        self.tiles = {
-            0: [Position(0, 2), Position(1, 0), Position(1, 1), Position(1, 2)],
-            1: [Position(0, 1), Position(1, 1), Position(2, 1), Position(2, 2)],
-            2: [Position(1, 0), Position(1, 1), Position(1, 2), Position(2, 0)],
-            3: [Position(0, 0), Position(0, 1), Position(1, 1), Position(2, 1)]
-        }
+class Block:
+	def __init__(self, id):
+		self.id = id
+		self.cells = {}
+		self.cell_size = 30
+		self.row_offset = 0
+		self.column_offset = 0
+		self.colors = Colors.get_cell_colors()
+		self.rotation_state = 0
 
-class JBlock(Block):
-    def __init__(self):
-        super().__init__(Position(0,3), id=1)
-        self.tiles = {
-            0: [Position(0, 0), Position(1, 0), Position(1, 1), Position(1, 2)],
-            1: [Position(0, 1), Position(0, 2), Position(1, 1), Position(2, 1)],
-            2: [Position(1, 0), Position(1, 1), Position(1, 2), Position(2, 2)],
-            3: [Position(0, 1), Position(1, 1), Position(2, 0), Position(2, 1)]
-        }
+	def get_cells_positions(self):
+		tiles = self.cells[self.rotation_state]
+		moved_tiles = []
+		for position in tiles:
+			position = Position(position.row + self.row_offset, position.column + self.column_offset)
+			moved_tiles.append(position)
+		return moved_tiles
 
-class IBlock(Block):
-    def __init__(self):
-        super().__init__(Position(-1, 3), id=2)
-        self.tiles = {
-            0: [Position(1, 0), Position(1, 1), Position(1, 2), Position(1, 3)],
-            1: [Position(0, 2), Position(1, 2), Position(2, 2), Position(3, 2)],
-            2: [Position(2, 0), Position(2, 1), Position(2, 2), Position(2, 3)],
-            3: [Position(0, 1), Position(1, 1), Position(2, 1), Position(3, 1)]
-        }
+	def move(self, rows, columns):
+		self.row_offset += rows
+		self.column_offset += columns
 
-class LBlock(Block):
-    def __init__(self):
-        super().__init__(Position(0, 3), id=3)
-        self.tiles = {
-            0: [Position(0, 2), Position(1, 0), Position(1, 1), Position(1, 2)],
-            1: [Position(0, 1), Position(1, 1), Position(2, 1), Position(2, 2)],
-            2: [Position(1, 0), Position(1, 1), Position(1, 2), Position(2, 0)],
-            3: [Position(0, 0), Position(0, 1), Position(1, 1), Position(2, 1)]
-        }
+	def rotate(self):
+		self.rotation_state += 1
+		if self.rotation_state == len(self.cells):
+			self.rotation_state = 0
 
-class OBlock(Block):
-    def __init__(self):
-        super().__init__(Position(0, 4), id = 4)
-        self.tiles = {
-            0: [Position(0, 0), Position(0, 1), Position(1, 0), Position(1, 1)],
-        }
+	def undo_rotation(self):
+		self.rotation_state -= 1
+		if self.rotation_state == -1:
+			self.rotation_state = len(self.cells) - 1
 
-class SBlock(Block):
-    def __init__(self):
-        super().__init__(Position(0, 3), id=5)
-        self.tiles = {
-            0: [Position(0, 1), Position(0, 2), Position(1, 0), Position(1, 1)],
-            1: [Position(0, 1), Position(1, 1), Position(1, 2), Position(2, 2)],
-            2: [Position(1, 1), Position(1, 2), Position(2, 0), Position(2, 1)],
-            3: [Position(0, 0), Position(1, 0), Position(1, 1), Position(2, 1)]
-        }
-
-class TBlock(Block):
-    def __init__(self):
-        super().__init__(Position(0, 3), id=6)
-        self.tiles = {
-            0: [Position(0, 1), Position(1, 0), Position(1, 1), Position(1, 2)],
-            1: [Position(0, 1), Position(1, 1), Position(1, 2), Position(2, 1)],
-            2: [Position(1, 0), Position(1, 1), Position(1, 2), Position(2, 1)],
-            3: [Position(0, 1), Position(1, 0), Position(1, 1), Position(2, 1)]
-        }
-
-class ZBlock(Block):
-    def __init__(self):
-        super().__init__(Position(0, 3), id=7)
-        self.tiles = {
-            0: [Position(0, 0), Position(0, 1), Position(1, 1), Position(1, 2)],
-            1: [Position(0, 2), Position(1, 1), Position(1, 2), Position(2, 1)],
-            2: [Position(1, 0), Position(1, 1), Position(2, 1), Position(2, 2)],
-            3: [Position(0, 1), Position(1, 0), Position(1, 1), Position(2, 0)]
-        }
+	def draw(self, screen, offset_x, offset_y):
+		tiles = self.get_cells_positions()
+		for tile in tiles:
+			tile_rect = pygame.Rect(offset_x + tile.column * self.cell_size, offset_y + tile.row * self.cell_size, self.cell_size - 1, self.cell_size -1)
+			pygame.draw.rect(screen, self.colors[self.id], tile_rect)
