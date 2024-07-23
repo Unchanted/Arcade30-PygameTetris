@@ -1,55 +1,79 @@
-import pygame
+from block import Block
 from position import Position
-from colors import Colors
 
-class Block():
-	def __init__(self, start_offset, id ):
-		self.start_off_x  = start_offset.row
-		self.start_off_y = start_offset.column
-		self.offset = start_offset
-		self.tiles = {}
-		self.id = id
-		self.rotation_state = 0
-		self.colors = Colors.get_tile_colors()
+class LBlock(Block):
+    def __init__(self):
+        super().__init__(Position(0, 3), id=0)
+        self.tiles = {
+            0: [Position(0, 2), Position(1, 0), Position(1, 1), Position(1, 2)],
+            1: [Position(0, 1), Position(1, 1), Position(2, 1), Position(2, 2)],
+            2: [Position(1, 0), Position(1, 1), Position(1, 2), Position(2, 0)],
+            3: [Position(0, 0), Position(0, 1), Position(1, 1), Position(2, 1)]
+        }
 
-	def tile_positions(self):
-		tiles = self.tiles[self.rotation_state]
-		new_tiles = []
-		for position in tiles:
-			position = Position(position.row + self.offset.row, position.column + self.offset.column)
-			new_tiles.append(position)
-		return new_tiles
+class JBlock(Block):
+    def __init__(self):
+        super().__init__(Position(0,3), id=1)
+        self.tiles = {
+            0: [Position(0, 0), Position(1, 0), Position(1, 1), Position(1, 2)],
+            1: [Position(0, 1), Position(0, 2), Position(1, 1), Position(2, 1)],
+            2: [Position(1, 0), Position(1, 1), Position(1, 2), Position(2, 2)],
+            3: [Position(0, 1), Position(1, 1), Position(2, 0), Position(2, 1)]
+        }
 
-	def rotate(self):
-		self.rotation_state = (self.rotation_state + 1) % len(self.tiles)
+class IBlock(Block):
+    def __init__(self):
+        super().__init__(Position(-1, 3), id=2)
+        self.tiles = {
+            0: [Position(1, 0), Position(1, 1), Position(1, 2), Position(1, 3)],
+            1: [Position(0, 2), Position(1, 2), Position(2, 2), Position(3, 2)],
+            2: [Position(2, 0), Position(2, 1), Position(2, 2), Position(2, 3)],
+            3: [Position(0, 1), Position(1, 1), Position(2, 1), Position(3, 1)]
+        }
 
-	def undo_rotate(self):
-		self.rotation_state = (self.rotation_state -1) % len(self.tiles)
+class LBlock(Block):
+    def __init__(self):
+        super().__init__(Position(0, 3), id=3)
+        self.tiles = {
+            0: [Position(0, 2), Position(1, 0), Position(1, 1), Position(1, 2)],
+            1: [Position(0, 1), Position(1, 1), Position(2, 1), Position(2, 2)],
+            2: [Position(1, 0), Position(1, 1), Position(1, 2), Position(2, 0)],
+            3: [Position(0, 0), Position(0, 1), Position(1, 1), Position(2, 1)]
+        }
 
-	def move(self, rows, columns):
-		self.offset.row += rows
-		self.offset.column += columns
+class OBlock(Block):
+    def __init__(self):
+        super().__init__(Position(0, 4), id = 4)
+        self.tiles = {
+            0: [Position(0, 0), Position(0, 1), Position(1, 0), Position(1, 1)],
+        }
 
-	def reset(self):
-		self.rotation_state = 0
-		self.offset.row = self.start_off_x
-		self.offset.column = self.start_off_y
+class SBlock(Block):
+    def __init__(self):
+        super().__init__(Position(0, 3), id=5)
+        self.tiles = {
+            0: [Position(0, 1), Position(0, 2), Position(1, 0), Position(1, 1)],
+            1: [Position(0, 1), Position(1, 1), Position(1, 2), Position(2, 2)],
+            2: [Position(1, 1), Position(1, 2), Position(2, 0), Position(2, 1)],
+            3: [Position(0, 0), Position(1, 0), Position(1, 1), Position(2, 1)]
+        }
 
-	def draw(self, screen):
-		tiles = self.tile_positions()
-		for tile in tiles:
-			tile_rect = pygame.Rect(10 + (tile.column) * 25 + 1, 10 + tile.row* 25 +1, 24, 24)
-			pygame.draw.rect(screen, self.colors[self.id], tile_rect)
+class TBlock(Block):
+    def __init__(self):
+        super().__init__(Position(0, 3), id=6)
+        self.tiles = {
+            0: [Position(0, 1), Position(1, 0), Position(1, 1), Position(1, 2)],
+            1: [Position(0, 1), Position(1, 1), Position(1, 2), Position(2, 1)],
+            2: [Position(1, 0), Position(1, 1), Position(1, 2), Position(2, 1)],
+            3: [Position(0, 1), Position(1, 0), Position(1, 1), Position(2, 1)]
+        }
 
-	def draw_small_icon(self, screen):
-		tiles = self.tile_positions()
-		for tile in tiles:
-			offset_x = 0
-			offset_y = 0
-			if self.id == 2:
-				offset_y = 15
-				offset_x = -8
-			elif self.id == 4:
-				offset_x = -10
-			tile_rect = pygame.Rect(offset_x + 240 + (tile.column) * 20 , offset_y + 230 + tile.row* 20, 19, 19)
-			pygame.draw.rect(screen, self.colors[self.id], tile_rect)
+class ZBlock(Block):
+    def __init__(self):
+        super().__init__(Position(0, 3), id=7)
+        self.tiles = {
+            0: [Position(0, 0), Position(0, 1), Position(1, 1), Position(1, 2)],
+            1: [Position(0, 2), Position(1, 1), Position(1, 2), Position(2, 1)],
+            2: [Position(1, 0), Position(1, 1), Position(2, 1), Position(2, 2)],
+            3: [Position(0, 1), Position(1, 0), Position(1, 1), Position(2, 0)]
+        }
